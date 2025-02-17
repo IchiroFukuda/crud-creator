@@ -1,8 +1,11 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MediaItem } from "@/components/MediaItem";
 import { DropZone } from "@/components/DropZone";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MediaFile {
   id: string;
@@ -15,6 +18,7 @@ interface MediaFile {
 const Index = () => {
   const [items, setItems] = useState<MediaFile[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleDrop = (acceptedFiles: File[]) => {
     const newItems = acceptedFiles.map((file) => ({
@@ -52,13 +56,31 @@ const Index = () => {
     });
   };
 
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      navigate("/auth");
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Media Library</h1>
-        <p className="text-muted-foreground">
-          Upload, manage, and organize your media files
-        </p>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">Media Library</h1>
+          <p className="text-muted-foreground">
+            Upload, manage, and organize your media files
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleLogout}>
+          ログアウト
+        </Button>
       </div>
 
       <DropZone onDrop={handleDrop} />
