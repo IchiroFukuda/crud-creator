@@ -1,14 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerForm } from "@/components/PartnerForm";
-import { Plus, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { PartnerCard } from "@/components/PartnerCard";
 import { Partner } from "@/types/partner";
+import { HeaderSection } from "@/components/partner/HeaderSection";
+import { PartnerList } from "@/components/partner/PartnerList";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,10 +91,6 @@ const Index = () => {
     }
   };
 
-  const handleLogin = () => {
-    navigate("/auth");
-  };
-
   const handleDelete = async () => {
     if (!deletePartner) return;
 
@@ -137,11 +132,6 @@ const Index = () => {
     setShowForm(true);
   };
 
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setSelectedPartner(undefined);
-  };
-
   const handleAddNew = () => {
     if (!user) {
       toast({
@@ -156,60 +146,30 @@ const Index = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">パートナー一覧</h1>
-          <p className="text-muted-foreground">
-            パートナー情報の管理・閲覧ができます
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          {user ? (
-            <>
-              <Button onClick={handleAddNew} className="w-full sm:w-auto">
-                <Plus className="w-4 h-4 mr-2" />
-                新規追加
-              </Button>
-              <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
-                ログアウト
-              </Button>
-            </>
-          ) : (
-            <Button onClick={handleLogin} className="w-full sm:w-auto">
-              <LogIn className="w-4 h-4 mr-2" />
-              ログイン
-            </Button>
-          )}
-        </div>
-      </div>
+      <HeaderSection
+        user={user}
+        onAddNew={handleAddNew}
+        onLogin={() => navigate("/auth")}
+        onLogout={handleLogout}
+      />
 
       {isLoading ? (
         <div className="text-center py-12">読み込み中...</div>
-      ) : partners.length === 0 ? (
-        <div className="text-center text-muted-foreground py-12">
-          パートナー情報がありません。
-          {user ? (
-            '「新規追加」から登録してください。'
-          ) : (
-            'ログインして新規追加することができます。'
-          )}
-        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {partners.map((partner) => (
-            <PartnerCard
-              key={partner.id}
-              partner={partner}
-              onEdit={handleEdit}
-              onDelete={user ? setDeletePartner : undefined}
-            />
-          ))}
-        </div>
+        <PartnerList
+          partners={partners}
+          user={user}
+          onEdit={handleEdit}
+          onDelete={setDeletePartner}
+        />
       )}
 
       <PartnerForm
         open={showForm}
-        onOpenChange={handleCloseForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) setSelectedPartner(undefined);
+        }}
         onSuccess={fetchPartners}
         partner={selectedPartner}
       />
@@ -235,4 +195,3 @@ const Index = () => {
 };
 
 export default Index;
-
