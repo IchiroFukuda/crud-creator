@@ -15,6 +15,7 @@ interface Partner {
   location: string | null;
   notes: string | null;
   image_url: string | null;
+  audio_url: string | null;
 }
 
 interface PartnerFormProps {
@@ -31,6 +32,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [audio, setAudio] = useState<File | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
       setLocation("");
       setNotes("");
       setImage(null);
+      setAudio(null);
     }
   }, [partner]);
 
@@ -54,6 +57,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
 
     try {
       let imageUrl = null;
+      let audioUrl = null;
 
       if (image) {
         const fileExt = image.name.split('.').pop();
@@ -72,12 +76,30 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
         imageUrl = publicUrl;
       }
 
+      if (audio) {
+        const fileExt = audio.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('partner-audio')
+          .upload(filePath, audio);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('partner-audio')
+          .getPublicUrl(filePath);
+
+        audioUrl = publicUrl;
+      }
+
       const partnerData = {
         name,
         age: age ? parseInt(age) : null,
         location,
         notes,
         ...(imageUrl ? { image_url: imageUrl } : {}),
+        ...(audioUrl ? { audio_url: audioUrl } : {}),
         user_id: (await supabase.auth.getUser()).data.user?.id
       };
 
@@ -172,6 +194,15 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
               type="file"
               accept="image/*"
               onChange={(e) => setImage(e.target.files?.[0] || null)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="audio">音声</Label>
+            <Input
+              id="audio"
+              type="file"
+              accept="audio/*"
+              onChange={(e) => setAudio(e.target.files?.[0] || null)}
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
