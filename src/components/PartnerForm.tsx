@@ -33,6 +33,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [images, setImages] = useState<File[]>([]);
+  const [currentImages, setCurrentImages] = useState<{ url: string }[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
   const { toast } = useToast();
 
@@ -42,15 +43,24 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
       setAge(partner.age?.toString() || "");
       setLocation(partner.location || "");
       setNotes(partner.notes || "");
+      setCurrentImages(partner.images || []);
     } else {
       setName("");
       setAge("");
       setLocation("");
       setNotes("");
       setImages([]);
+      setCurrentImages([]);
       setAudio(null);
     }
   }, [partner]);
+
+  const handleImageReorder = (fromIndex: number, toIndex: number) => {
+    const newImages = [...currentImages];
+    const [movedImage] = newImages.splice(fromIndex, 1);
+    newImages.splice(toIndex, 0, movedImage);
+    setCurrentImages(newImages);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +111,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
         age: age ? parseInt(age) : null,
         location,
         notes,
-        images: partner ? [...partner.images, ...uploadedImages] : uploadedImages,
+        images: [...currentImages, ...uploadedImages],
         ...(audioUrl ? { audio_url: audioUrl } : {}),
         user_id: (await supabase.auth.getUser()).data.user?.id
       };
@@ -198,17 +208,30 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
               onChange={(e) => setImages(Array.from(e.target.files || []))}
             />
           </div>
-          {partner?.images && partner.images.length > 0 && (
+          {currentImages.length > 0 && (
             <div className="space-y-2">
-              <Label>現在の画像</Label>
+              <Label>現在の画像（クリックすると表示順を変更できます）</Label>
               <div className="grid grid-cols-2 gap-2">
-                {partner.images.map((image, index) => (
-                  <div key={index} className="relative">
+                {currentImages.map((image, index) => (
+                  <div
+                    key={index}
+                    className="relative cursor-pointer transition-transform hover:scale-105"
+                    onClick={() => {
+                      if (index !== 0) {
+                        handleImageReorder(index, 0);
+                      }
+                    }}
+                  >
                     <img
                       src={image.url}
                       alt={`画像 ${index + 1}`}
-                      className="w-full h-24 object-cover rounded"
+                      className={`w-full h-24 object-cover rounded ${index === 0 ? 'ring-2 ring-primary' : ''}`}
                     />
+                    {index === 0 && (
+                      <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded">
+                        メイン
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
