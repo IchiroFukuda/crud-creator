@@ -64,7 +64,7 @@ const Index = () => {
           location: partner.location,
           notes: partner.notes,
           images: formattedImages,
-          audio_url: partner.audio_url
+          audio_url: partner.audio_url || null // この行を修正
         };
       });
 
