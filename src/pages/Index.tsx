@@ -52,7 +52,20 @@ const Index = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPartners(data || []);
+      
+      // データを Partner インターフェースの形式に変換
+      const formattedPartners: Partner[] = (data || []).map(partner => ({
+        id: partner.id,
+        name: partner.name || "",
+        age: partner.age,
+        location: partner.location,
+        notes: partner.notes,
+        // images フィールドを適切な形式に変換
+        images: Array.isArray(partner.images) ? partner.images : [],
+        audio_url: partner.audio_url
+      }));
+
+      setPartners(formattedPartners);
     } catch (error: any) {
       toast({
         title: "エラー",
