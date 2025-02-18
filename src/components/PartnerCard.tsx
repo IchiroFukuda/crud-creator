@@ -7,7 +7,7 @@ import { Pencil, Trash2, Music2, Image } from "lucide-react";
 interface PartnerCardProps {
   partner: Partner;
   onEdit: (partner: Partner) => void;
-  onDelete: (partner: Partner) => void;
+  onDelete?: ((partner: Partner) => void) | undefined;
 }
 
 export const PartnerCard = ({ partner, onEdit, onDelete }: PartnerCardProps) => {
@@ -58,13 +58,15 @@ export const PartnerCard = ({ partner, onEdit, onDelete }: PartnerCardProps) => 
         >
           <Pencil className="h-4 w-4" />
         </Button>
-        <Button
-          variant="destructive"
-          size="icon"
-          onClick={() => onDelete(partner)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {onDelete && (
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={() => onDelete(partner)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
