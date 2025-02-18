@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerForm } from "@/components/PartnerForm";
-import { Plus } from "lucide-react";
+import { Plus, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PartnerCard } from "@/components/PartnerCard";
 import { Partner } from "@/types/partner";
@@ -32,11 +32,6 @@ const Index = () => {
 
   const fetchPartners = async () => {
     try {
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
       const { data, error } = await supabase
         .from('partner')
         .select('*')
@@ -64,7 +59,7 @@ const Index = () => {
           location: partner.location,
           notes: partner.notes,
           images: formattedImages,
-          audio_url: partner.audio_url || null // この行を修正
+          audio_url: partner.audio_url || null
         };
       });
 
@@ -82,7 +77,7 @@ const Index = () => {
 
   useEffect(() => {
     fetchPartners();
-  }, [user]);
+  }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -95,6 +90,10 @@ const Index = () => {
     } else {
       navigate("/auth");
     }
+  };
+
+  const handleLogin = () => {
+    navigate("/auth");
   };
 
   const handleDelete = async () => {
@@ -126,6 +125,14 @@ const Index = () => {
   };
 
   const handleEdit = (partner: Partner) => {
+    if (!user) {
+      toast({
+        title: "ログインが必要です",
+        description: "編集機能を使用するにはログインしてください",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedPartner(partner);
     setShowForm(true);
   };
@@ -133,6 +140,18 @@ const Index = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setSelectedPartner(undefined);
+  };
+
+  const handleAddNew = () => {
+    if (!user) {
+      toast({
+        title: "ログインが必要です",
+        description: "新規追加機能を使用するにはログインしてください",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowForm(true);
   };
 
   return (
@@ -145,13 +164,22 @@ const Index = () => {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            新規追加
-          </Button>
-          <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
-            ログアウト
-          </Button>
+          {user ? (
+            <>
+              <Button onClick={handleAddNew} className="w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                新規追加
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
+                ログアウト
+              </Button>
+            </>
+          ) : (
+            <Button onClick={handleLogin} className="w-full sm:w-auto">
+              <LogIn className="w-4 h-4 mr-2" />
+              ログイン
+            </Button>
+          )}
         </div>
       </div>
 
@@ -159,7 +187,12 @@ const Index = () => {
         <div className="text-center py-12">読み込み中...</div>
       ) : partners.length === 0 ? (
         <div className="text-center text-muted-foreground py-12">
-          パートナー情報がありません。「新規追加」から登録してください。
+          パートナー情報がありません。
+          {user ? (
+            '「新規追加」から登録してください。'
+          ) : (
+            'ログインして新規追加することができます。'
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -168,7 +201,7 @@ const Index = () => {
               key={partner.id}
               partner={partner}
               onEdit={handleEdit}
-              onDelete={setDeletePartner}
+              onDelete={user ? setDeletePartner : undefined}
             />
           ))}
         </div>
@@ -202,3 +235,4 @@ const Index = () => {
 };
 
 export default Index;
+
