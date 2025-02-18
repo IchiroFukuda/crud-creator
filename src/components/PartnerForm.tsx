@@ -2,22 +2,11 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Image, X } from "lucide-react";
-
-interface Partner {
-  id: number;
-  name: string;
-  age: number | null;
-  location: string | null;
-  notes: string | null;
-  images: { url: string }[];
-  audio_url: string | null;
-}
+import { Partner } from "@/types/partner";
+import { ImagePreview } from "./partner/ImagePreview";
+import { PartnerFormFields } from "./partner/PartnerFormFields";
 
 interface PartnerFormProps {
   open: boolean;
@@ -163,89 +152,22 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">名前</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="age">年齢</Label>
-            <Input
-              id="age"
-              type="number"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="location">場所</Label>
-            <Input
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="notes">メモ</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="images">画像（複数選択可）</Label>
-            <Input
-              id="images"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setImages(Array.from(e.target.files || []))}
-            />
-          </div>
-          {currentImages.length > 0 && (
-            <div className="space-y-2">
-              <Label>現在の画像（クリックすると表示順を変更できます）</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {currentImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className="relative cursor-pointer transition-transform hover:scale-105"
-                    onClick={() => {
-                      if (index !== 0) {
-                        handleImageReorder(index, 0);
-                      }
-                    }}
-                  >
-                    <img
-                      src={image.url}
-                      alt={`画像 ${index + 1}`}
-                      className={`w-full h-24 object-cover rounded ${index === 0 ? 'ring-2 ring-primary' : ''}`}
-                    />
-                    {index === 0 && (
-                      <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded">
-                        メイン
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="audio">音声</Label>
-            <Input
-              id="audio"
-              type="file"
-              accept="audio/*"
-              onChange={(e) => setAudio(e.target.files?.[0] || null)}
-            />
-          </div>
+          <PartnerFormFields
+            name={name}
+            setName={setName}
+            age={age}
+            setAge={setAge}
+            location={location}
+            setLocation={setLocation}
+            notes={notes}
+            setNotes={setNotes}
+            setImages={setImages}
+            setAudio={setAudio}
+          />
+          <ImagePreview
+            images={currentImages}
+            onReorder={handleImageReorder}
+          />
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "保存中..." : (partner ? "更新" : "保存")}
           </Button>
