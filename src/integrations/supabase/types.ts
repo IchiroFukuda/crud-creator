@@ -43,15 +43,7 @@ export type Database = {
           notes?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "partner_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       partner_tags: {
         Row: {

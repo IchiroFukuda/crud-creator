@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PartnerForm } from "@/components/PartnerForm";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Partner {
   id: number;
@@ -23,9 +24,15 @@ const Index = () => {
   const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const fetchPartners = async () => {
     try {
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
       const { data, error } = await supabase
         .from('partner')
         .select('*')
@@ -46,7 +53,7 @@ const Index = () => {
 
   useEffect(() => {
     fetchPartners();
-  }, []);
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
