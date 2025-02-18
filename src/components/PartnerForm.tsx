@@ -146,7 +146,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {partner ? "パートナー情報の編集" : "パートナー情報の追加"}
