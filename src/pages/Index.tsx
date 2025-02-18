@@ -54,16 +54,30 @@ const Index = () => {
       if (error) throw error;
       
       // データを Partner インターフェースの形式に変換
-      const formattedPartners: Partner[] = (data || []).map(partner => ({
-        id: partner.id,
-        name: partner.name || "",
-        age: partner.age,
-        location: partner.location,
-        notes: partner.notes,
-        // images フィールドを適切な形式に変換
-        images: Array.isArray(partner.images) ? partner.images : [],
-        audio_url: partner.audio_url
-      }));
+      const formattedPartners: Partner[] = (data || []).map(partner => {
+        // images フィールドを安全に変換
+        const rawImages = partner.images;
+        let formattedImages: { url: string }[] = [];
+        
+        if (Array.isArray(rawImages)) {
+          formattedImages = rawImages.map(img => {
+            if (typeof img === 'object' && img !== null && 'url' in img) {
+              return { url: img.url as string };
+            }
+            return { url: '' }; // デフォルト値
+          }).filter(img => img.url !== ''); // 空のURLを除外
+        }
+
+        return {
+          id: partner.id,
+          name: partner.name || "",
+          age: partner.age,
+          location: partner.location,
+          notes: partner.notes,
+          images: formattedImages,
+          audio_url: partner.audio_url
+        };
+      });
 
       setPartners(formattedPartners);
     } catch (error: any) {
