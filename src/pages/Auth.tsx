@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,7 +88,7 @@ const Auth = () => {
               : "ログイン"}
           </Button>
         </form>
-        <div className="text-center">
+        <div className="text-center space-y-4">
           <button
             type="button"
             className="text-sm text-blue-500 hover:underline"
@@ -98,6 +98,11 @@ const Auth = () => {
               ? "既にアカウントをお持ちの方はこちら"
               : "アカウントをお持ちでない方はこちら"}
           </button>
+          <div>
+            <Link to="/" className="text-sm text-gray-500 hover:underline">
+              トップページに戻る
+            </Link>
+          </div>
         </div>
       </div>
     </div>
