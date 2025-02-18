@@ -6,8 +6,18 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerForm } from "@/components/PartnerForm";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Partner {
   id: number;
@@ -22,6 +32,8 @@ const Index = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | undefined>();
+  const [deletePartner, setDeletePartner] = useState<Partner | undefined>();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -66,6 +78,44 @@ const Index = () => {
     } else {
       navigate("/auth");
     }
+  };
+
+  const handleDelete = async () => {
+    if (!deletePartner) return;
+
+    try {
+      const { error } = await supabase
+        .from('partner')
+        .delete()
+        .eq('id', deletePartner.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "削除完了",
+        description: "パートナー情報を削除しました",
+      });
+
+      fetchPartners();
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletePartner(undefined);
+    }
+  };
+
+  const handleEdit = (partner: Partner) => {
+    setSelectedPartner(partner);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setSelectedPartner(undefined);
   };
 
   return (
@@ -117,6 +167,22 @@ const Index = () => {
                   </p>
                 )}
               </CardContent>
+              <CardFooter className="flex justify-end gap-2 p-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleEdit(partner)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => setDeletePartner(partner)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardFooter>
             </Card>
           ))}
         </div>
@@ -124,9 +190,27 @@ const Index = () => {
 
       <PartnerForm
         open={showForm}
-        onOpenChange={setShowForm}
+        onOpenChange={handleCloseForm}
         onSuccess={fetchPartners}
+        partner={selectedPartner}
       />
+
+      <AlertDialog open={!!deletePartner} onOpenChange={() => setDeletePartner(undefined)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消すことができません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

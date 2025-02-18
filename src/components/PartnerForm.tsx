@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Partner {
+  id: number;
+  name: string;
+  age: number | null;
+  location: string | null;
+  notes: string | null;
+  image_url: string | null;
+}
+
 interface PartnerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  partner?: Partner;
 }
 
-export const PartnerForm = ({ open, onOpenChange, onSuccess }: PartnerFormProps) => {
+export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
@@ -22,6 +32,21 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess }: PartnerFormProps)
   const [notes, setNotes] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (partner) {
+      setName(partner.name);
+      setAge(partner.age?.toString() || "");
+      setLocation(partner.location || "");
+      setNotes(partner.notes || "");
+    } else {
+      setName("");
+      setAge("");
+      setLocation("");
+      setNotes("");
+      setImage(null);
+    }
+  }, [partner]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,23 +72,41 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess }: PartnerFormProps)
         imageUrl = publicUrl;
       }
 
-      const { error } = await supabase
-        .from('partner')
-        .insert({
-          name,
-          age: age ? parseInt(age) : null,
-          location,
-          notes,
-          image_url: imageUrl,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+      const partnerData = {
+        name,
+        age: age ? parseInt(age) : null,
+        location,
+        notes,
+        ...(imageUrl ? { image_url: imageUrl } : {}),
+        user_id: (await supabase.auth.getUser()).data.user?.id
+      };
+
+      if (partner) {
+        // 更新
+        const { error } = await supabase
+          .from('partner')
+          .update(partnerData)
+          .eq('id', partner.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "更新完了",
+          description: "パートナー情報を更新しました",
         });
+      } else {
+        // 新規作成
+        const { error } = await supabase
+          .from('partner')
+          .insert(partnerData);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "保存完了",
-        description: "パートナー情報を保存しました",
-      });
+        toast({
+          title: "保存完了",
+          description: "パートナー情報を保存しました",
+        });
+      }
       
       onSuccess();
       onOpenChange(false);
@@ -82,7 +125,9 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess }: PartnerFormProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>パートナー情報の追加</DialogTitle>
+          <DialogTitle>
+            {partner ? "パートナー情報の編集" : "パートナー情報の追加"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -130,7 +175,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess }: PartnerFormProps)
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "保存中..." : "保存"}
+            {isLoading ? "保存中..." : (partner ? "更新" : "保存")}
           </Button>
         </form>
       </DialogContent>
