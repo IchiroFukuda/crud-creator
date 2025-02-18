@@ -137,19 +137,19 @@ const Index = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold mb-2">パートナー一覧</h1>
           <p className="text-muted-foreground">
             パートナー情報の管理・閲覧ができます
           </p>
         </div>
-        <div className="flex gap-4">
-          <Button onClick={() => setShowForm(true)}>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             新規追加
           </Button>
-          <Button variant="outline" onClick={handleLogout}>
+          <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
             ログアウト
           </Button>
         </div>
