@@ -1,60 +1,52 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MediaItem } from "@/components/MediaItem";
-import { DropZone } from "@/components/DropZone";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PartnerForm } from "@/components/PartnerForm";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Plus } from "lucide-react";
 
-interface MediaFile {
-  id: string;
+interface Partner {
+  id: number;
   name: string;
-  type: string;
-  url: string;
-  createdAt: Date;
+  age: number | null;
+  location: string | null;
+  notes: string | null;
+  image_url: string | null;
 }
 
 const Index = () => {
-  const [items, setItems] = useState<MediaFile[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleDrop = (acceptedFiles: File[]) => {
-    const newItems = acceptedFiles.map((file) => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      createdAt: new Date(),
-    }));
+  const fetchPartners = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('partner')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    setItems((prev) => [...prev, ...newItems]);
-    toast({
-      title: "Files uploaded",
-      description: `Successfully uploaded ${acceptedFiles.length} file(s)`,
-    });
+      if (error) throw error;
+      setPartners(data || []);
+    } catch (error: any) {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    toast({
-      title: "File deleted",
-      description: "The file has been successfully deleted",
-    });
-  };
-
-  const handleEdit = (id: string, newName: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, name: newName } : item
-      )
-    );
-    toast({
-      title: "File renamed",
-      description: "The file has been successfully renamed",
-    });
-  };
+  useEffect(() => {
+    fetchPartners();
+  }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -73,36 +65,61 @@ const Index = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Media Library</h1>
+          <h1 className="text-4xl font-bold mb-2">パートナー一覧</h1>
           <p className="text-muted-foreground">
-            Upload, manage, and organize your media files
+            パートナー情報の管理・閲覧ができます
           </p>
         </div>
-        <Button variant="outline" onClick={handleLogout}>
-          ログアウト
-        </Button>
+        <div className="flex gap-4">
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            新規追加
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            ログアウト
+          </Button>
+        </div>
       </div>
 
-      <DropZone onDrop={handleDrop} />
+      {isLoading ? (
+        <div className="text-center py-12">読み込み中...</div>
+      ) : partners.length === 0 ? (
+        <div className="text-center text-muted-foreground py-12">
+          パートナー情報がありません。「新規追加」から登録してください。
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {partners.map((partner) => (
+            <Card key={partner.id}>
+              <CardContent className="p-4">
+                {partner.image_url && (
+                  <img
+                    src={partner.image_url}
+                    alt={partner.name}
+                    className="w-full h-48 object-cover rounded-md mb-4"
+                  />
+                )}
+                <h3 className="text-lg font-semibold mb-2">{partner.name}</h3>
+                {partner.age && <p className="text-sm">年齢: {partner.age}歳</p>}
+                {partner.location && (
+                  <p className="text-sm">場所: {partner.location}</p>
+                )}
+                {partner.notes && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {partner.notes}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      <div className="mt-12">
-        {items.length === 0 ? (
-          <div className="text-center text-muted-foreground py-12">
-            No files uploaded yet. Drop some files to get started!
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {items.map((item) => (
-              <MediaItem
-                key={item.id}
-                item={item}
-                onDelete={handleDelete}
-                onEdit={handleEdit}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <PartnerForm
+        open={showForm}
+        onOpenChange={setShowForm}
+        onSuccess={fetchPartners}
+      />
     </div>
   );
 };
