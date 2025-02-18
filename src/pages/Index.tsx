@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerForm } from "@/components/PartnerForm";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Music2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Music2, Image } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertDialog,
@@ -24,7 +25,7 @@ interface Partner {
   age: number | null;
   location: string | null;
   notes: string | null;
-  image_url: string | null;
+  images: { url: string }[];
   audio_url: string | null;
 }
 
@@ -149,9 +150,9 @@ const Index = () => {
           {partners.map((partner) => (
             <Card key={partner.id}>
               <CardContent className="p-4">
-                {partner.image_url && (
+                {partner.images && partner.images[0] && (
                   <img
-                    src={partner.image_url}
+                    src={partner.images[0].url}
                     alt={partner.name}
                     className="w-full h-48 object-cover rounded-md mb-4"
                   />
@@ -165,6 +166,12 @@ const Index = () => {
                   <p className="text-sm text-muted-foreground mt-2">
                     {partner.notes}
                   </p>
+                )}
+                {partner.images && partner.images.length > 1 && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                    <Image className="w-4 h-4" />
+                    <span>他 {partner.images.length - 1} 枚の画像</span>
+                  </div>
                 )}
                 {partner.audio_url && (
                   <div className="mt-4">

@@ -16,6 +16,7 @@ export type Database = {
           created_at: string
           id: number
           image_url: string | null
+          images: Json | null
           location: string | null
           name: string | null
           notes: string | null
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: number
           image_url?: string | null
+          images?: Json | null
           location?: string | null
           name?: string | null
           notes?: string | null
@@ -38,6 +40,7 @@ export type Database = {
           created_at?: string
           id?: number
           image_url?: string | null
+          images?: Json | null
           location?: string | null
           name?: string | null
           notes?: string | null

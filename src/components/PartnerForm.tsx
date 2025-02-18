@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Image, X } from "lucide-react";
 
 interface Partner {
   id: number;
@@ -14,7 +15,7 @@ interface Partner {
   age: number | null;
   location: string | null;
   notes: string | null;
-  image_url: string | null;
+  images: { url: string }[];
   audio_url: string | null;
 }
 
@@ -31,7 +32,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
   const [age, setAge] = useState("");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
-  const [image, setImage] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
   const [audio, setAudio] = useState<File | null>(null);
   const { toast } = useToast();
 
@@ -46,7 +47,7 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
       setAge("");
       setLocation("");
       setNotes("");
-      setImage(null);
+      setImages([]);
       setAudio(null);
     }
   }, [partner]);
@@ -56,10 +57,10 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
     setIsLoading(true);
 
     try {
-      let imageUrl = null;
-      let audioUrl = null;
+      let uploadedImages = [];
 
-      if (image) {
+      // Upload new images
+      for (const image of images) {
         const fileExt = image.name.split('.').pop();
         const filePath = `${crypto.randomUUID()}.${fileExt}`;
         
@@ -73,8 +74,10 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
           .from('partner-images')
           .getPublicUrl(filePath);
 
-        imageUrl = publicUrl;
+        uploadedImages.push({ url: publicUrl });
       }
+
+      let audioUrl = null;
 
       if (audio) {
         const fileExt = audio.name.split('.').pop();
@@ -98,13 +101,12 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
         age: age ? parseInt(age) : null,
         location,
         notes,
-        ...(imageUrl ? { image_url: imageUrl } : {}),
+        images: partner ? [...partner.images, ...uploadedImages] : uploadedImages,
         ...(audioUrl ? { audio_url: audioUrl } : {}),
         user_id: (await supabase.auth.getUser()).data.user?.id
       };
 
       if (partner) {
-        // 更新
         const { error } = await supabase
           .from('partner')
           .update(partnerData)
@@ -117,7 +119,6 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
           description: "パートナー情報を更新しました",
         });
       } else {
-        // 新規作成
         const { error } = await supabase
           .from('partner')
           .insert(partnerData);
@@ -188,14 +189,31 @@ export const PartnerForm = ({ open, onOpenChange, onSuccess, partner }: PartnerF
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">画像</Label>
+            <Label htmlFor="images">画像（複数選択可）</Label>
             <Input
-              id="image"
+              id="images"
               type="file"
               accept="image/*"
-              onChange={(e) => setImage(e.target.files?.[0] || null)}
+              multiple
+              onChange={(e) => setImages(Array.from(e.target.files || []))}
             />
           </div>
+          {partner?.images && partner.images.length > 0 && (
+            <div className="space-y-2">
+              <Label>現在の画像</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {partner.images.map((image, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={image.url}
+                      alt={`画像 ${index + 1}`}
+                      className="w-full h-24 object-cover rounded"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="audio">音声</Label>
             <Input
